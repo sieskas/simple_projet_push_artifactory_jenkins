@@ -21,11 +21,11 @@ node {
     }
 
     stage ('Test') {
-        rtMaven.run pom: 'pom.xml', goals: 'clean test'
+        rtMaven.run pom: 'simple_projet_push_artifactory_jenkins/pom.xml', goals: 'clean test'
     }
 
     stage ('Install') {
-        rtMaven.run pom: 'pom.xml', goals: 'install', buildInfo: buildInfo
+        rtMaven.run pom: 'simple_projet_push_artifactory_jenkins/pom.xml', goals: 'install', buildInfo: buildInfo
     }
 
     stage ('Deploy') {
