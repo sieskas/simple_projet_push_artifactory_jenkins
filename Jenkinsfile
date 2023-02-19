@@ -1,31 +1,38 @@
-pipeline {
-  agent any
-  tools {
-    maven 'maven 3.9.0'
-  }
-  options {
-    buildDiscarder(logRotator(numToKeepStr: '5'))
-  }
-  environment {
-    CI = true
-    ARTIFACTORY_ACCESS_TOKEN = credentials('artifactory-access-token')
-  }
-  stages {
-    stage('Build') {
-      steps {
-        sh './mvnw clean install'
-      }
+node {
+    def server
+    def buildInfo
+    def rtMaven
+
+    stage ('Clone') {
+        git url: 'https://github.com/sieskas/simple_projet_push_artifactory_jenkins.git'
     }
-    stage('Upload to Artifactory') {
-      agent {
-        docker {
-          image 'releases-docker.jfrog.io/jfrog/jfrog-cli-v2:2.2.0'
-          reuseNode true
-        }
-      }
-      steps {
-        sh 'jfrog rt upload --url http://http://localhost:8082/artifactory/ --access-token ${ARTIFACTORY_ACCESS_TOKEN} target/example-project-1.0.0-SNAPSHOT.jar libs-snapshot-local/'
-      }
+
+    stage ('Artifactory configuration') {
+        // Obtain an Artifactory server instance, defined in Jenkins --> Manage Jenkins --> Configure System:
+        server = Artifactory.server SERVER_ID
+
+        rtMaven = Artifactory.newMavenBuild()
+        rtMaven.tool = MAVEN_TOOL // Tool name from Jenkins configuration
+        rtMaven.deployer releaseRepo: ARTIFACTORY_LOCAL_RELEASE_REPO, snapshotRepo: ARTIFACTORY_LOCAL_SNAPSHOT_REPO, server: server
+        rtMaven.resolver releaseRepo: ARTIFACTORY_VIRTUAL_RELEASE_REPO, snapshotRepo: ARTIFACTORY_VIRTUAL_SNAPSHOT_REPO, server: server
+        rtMaven.deployer.deployArtifacts = false // Disable artifacts deployment during Maven run
+
+        buildInfo = Artifactory.newBuildInfo()
     }
-  }
+
+    stage ('Test') {
+        rtMaven.run pom: 'pom.xml', goals: 'clean test'
+    }
+
+    stage ('Install') {
+        rtMaven.run pom: 'pom.xml', goals: 'install', buildInfo: buildInfo
+    }
+
+    stage ('Deploy') {
+        rtMaven.deployer.deployArtifacts buildInfo
+    }
+
+    stage ('Publish build info') {
+        server.publishBuildInfo buildInfo
+    }
 }
