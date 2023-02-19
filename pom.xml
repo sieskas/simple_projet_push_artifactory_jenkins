@@ -1,0 +1,33 @@
+<project>
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.example</groupId>
+    <artifactId>example-project</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+
+    <properties>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+    </properties>
+
+
+    <distributionManagement>
+        <snapshotRepository>
+            <id>snapshots</id>
+            <name>0a105e12ddc8-snapshots</name>
+            <url>http://localhost:8081/artifactory/libs-snapshot-local</url>
+        </snapshotRepository>
+    </distributionManagement>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <version>3.1.0</version>
+                <configuration>
+                    <altDeploymentRepository>artifactory::default::http://localhost:8081/artifactory/libs-snapshot-local</altDeploymentRepository>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
