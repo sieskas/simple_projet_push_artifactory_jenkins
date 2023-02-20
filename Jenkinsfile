@@ -11,6 +11,11 @@ pipeline {
     ARTIFACTORY_ACCESS_TOKEN = credentials('artifactory-access-token')
   }
   stages {
+      stage("SCM Checkout"){
+          steps{
+          git 'https://github.com/sieskas/simple_projet_push_artifactory_jenkins.git'
+          }
+      }
     stage('Build') {
       steps {
         bat 'mvn clean install'
