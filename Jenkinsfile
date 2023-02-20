@@ -14,7 +14,7 @@ pipeline {
     stage('Build') {
       steps {
         sh 'chmod +x mvnw'
-        sh './mvnw clean install'
+        sh 'mvn clean install'
       }
     }
     stage('Upload to Artifactory') {
