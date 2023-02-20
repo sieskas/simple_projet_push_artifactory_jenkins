@@ -1,7 +1,7 @@
 pipeline {
   agent any
   tools {
-    maven 'maven 3.9.0'
+    maven 'maven'
   }
   options {
     buildDiscarder(logRotator(numToKeepStr: '5'))
@@ -18,7 +18,7 @@ pipeline {
       }
     stage('Build') {
       steps {
-        bat 'mvn clean install'
+        sh './mvnw clean install'
       }
     }
     stage('Upload to Artifactory') {
