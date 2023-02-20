@@ -1,5 +1,7 @@
 pipeline {
-  agent any
+ agent {
+    label 'docker'
+  }
   tools {
     maven 'maven'
   }
@@ -20,6 +22,7 @@ pipeline {
     stage('Upload to Artifactory') {
       agent {
         docker {
+          label 'docker'
           image 'releases-docker.jfrog.io/jfrog/jfrog-cli-v2:latest'
           reuseNode true
         }
