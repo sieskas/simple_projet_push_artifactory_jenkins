@@ -1,38 +1,31 @@
-node {
-    def server
-    def buildInfo
-    def rtMaven
-
-    stage ('Clone') {
-        git url: 'https://github.com/sieskas/simple_projet_push_artifactory_jenkins.git'
+pipeline {
+  agent any
+  tools {
+    maven 'maven 3.9.0'
+  }
+  options {
+    buildDiscarder(logRotator(numToKeepStr: '5'))
+  }
+  environment {
+    CI = true
+    ARTIFACTORY_ACCESS_TOKEN = credentials('artifactory-access-token')
+  }
+  stages {
+    stage('Build') {
+      steps {
+        bat 'mvn clean install'
+      }
     }
-
-    stage ('Artifactory configuration') {
-        // Obtain an Artifactory server instance, defined in Jenkins --> Manage Jenkins --> Configure System:
-        server = Artifactory.server 'Artifactory1'
-
-        rtMaven = Artifactory.newMavenBuild()
-        rtMaven.tool = 'maven 3.9.0' // Tool name from Jenkins configuration
-        rtMaven.deployer releaseRepo: 'libs-release-local', snapshotRepo: 'libs-snapshot-local', server: server
-        rtMaven.resolver releaseRepo: 'libs-release', snapshotRepo: 'libs-snapshot', server: server
-        rtMaven.deployer.deployArtifacts = false // Disable artifacts deployment during Maven run
-
-        buildInfo = Artifactory.newBuildInfo()
+    stage('Upload to Artifactory') {
+      agent {
+        docker {
+          image 'releases-docker.jfrog.io/jfrog/jfrog-cli-v2:2.2.0'
+          reuseNode true
+        }
+      }
+      steps {
+        bat 'jfrog rt upload --url http://http://localhost:8082/artifactory/ --access-token ${ARTIFACTORY_ACCESS_TOKEN} target/example-project-1.0.0-SNAPSHOT.jar libs-snapshot-local/'
+      }
     }
-
-    stage ('Test') {
-        rtMaven.run pom: 'simple_projet_push_artifactory_jenkins/pom.xml', goals: 'clean test'
-    }
-
-    stage ('Install') {
-        rtMaven.run pom: 'simple_projet_push_artifactory_jenkins/pom.xml', goals: 'install', buildInfo: buildInfo
-    }
-
-    stage ('Deploy') {
-        rtMaven.deployer.deployArtifacts buildInfo
-    }
-
-    stage ('Publish build info') {
-        server.publishBuildInfo buildInfo
-    }
+  }
 }
